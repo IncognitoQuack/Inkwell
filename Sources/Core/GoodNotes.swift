@@ -2,7 +2,7 @@ import Compression
 import CoreGraphics
 import Foundation
 
-/// Imports GoodNotes `.goodnotes` exports into Inkwell notebooks.
+/// Imports GoodNotes `.goodnotes` exports into Strokebook notebooks.
 ///
 /// A `.goodnotes` file is a ZIP of length-delimited protobuf record streams:
 /// - `index.events.pb`: document events. Type 30 = document (title), 2 = page template (attachment +
@@ -33,7 +33,7 @@ enum GoodNotesImporter {
     struct Result {
         var notebook: Notebook
         var strokes = 0
-        /// Items Inkwell can't import yet, by GoodNotes item field number.
+        /// Items Strokebook can't import yet, by GoodNotes item field number.
         var skipped: [Int: Int] = [:]
         var skippedCount: Int { skipped.values.reduce(0, +) }
     }
@@ -136,9 +136,14 @@ enum GoodNotesImporter {
 
     static func decodeStroke(_ blob: Data, fields f: [ProtoReader.Field]) -> Decoded {
         guard let tpl = decompressAppleLZ4(blob), let parts = Tpl.parse(tpl) else { return .unsupported }
+        return stroke(from: parts, fields: f)
+    }
+
+    /// Builds a stroke from a parsed tpl blob. Non-finite numbers in a damaged file are rejected, never trusted.
+    static func stroke(from parts: [Tpl.Value], fields f: [ProtoReader.Field]) -> Decoded {
         if Tpl.isEmpty(parts) { return .empty }
         guard parts.count >= 4, case .u16s(let ops) = parts[1], case .floats(let start) = parts[2], case .floats(let segs) = parts[3],
-              start.count >= 3 else { return .unsupported }
+              start.count >= 3, start.allSatisfy(\.isFinite), segs.allSatisfy(\.isFinite) else { return .unsupported }
         var color = RGBA(0, 0, 0)
         if let c = f.first(where: { $0.number == 4 })?.data, let cf = ProtoReader.fields(c) {
             let v = (1...4).map { n in cf.first { $0.number == n }?.float ?? (n == 4 ? 1 : 0) }
@@ -153,7 +158,7 @@ enum GoodNotesImporter {
                 let c = (CGFloat(segs[i]), CGFloat(segs[i + 1]), CGFloat(segs[i + 2]))
                 let p1 = (CGFloat(segs[i + 3]), CGFloat(segs[i + 4]), CGFloat(segs[i + 5]))
                 let len = hypot(c.0 - p0.0, c.1 - p0.1) + hypot(p1.0 - c.0, p1.1 - c.1)
-                let n = Int((len / 1.5).rounded(.up)).clamped(1, 64)
+                let n = Int(min((len / 1.5).rounded(.up), 64)).clamped(1, 64) // clamp before converting: huge values trap
                 for k in 1...n {
                     let t = CGFloat(k) / CGFloat(n), u = 1 - t
                     pts.append((u * u * p0.0 + 2 * u * t * c.0 + t * t * p1.0,
@@ -166,7 +171,7 @@ enum GoodNotesImporter {
                 i += 3
             }
         }
-        // Inkwell nib: radius = width/2 × (0.22 + 0.78 × p^0.7). Take width from the widest point and
+        // Strokebook nib: radius = width/2 × (0.22 + 0.78 × p^0.7). Take width from the widest point and
         // invert the curve for each point's pressure, so the imported line keeps its thick-thin shape.
         let maxR = max(pts.map(\.2).max() ?? 1, 0.1)
         let width = Float(maxR * 2)
@@ -346,7 +351,8 @@ enum ProtoReader {
         var out: [Data] = []
         var i = 0
         while i < b.count {
-            guard let (n, j) = varint(b, i), j + Int(n) <= b.count, n <= UInt64(b.count) else { break }
+            // Compare as UInt64 first: converting an absurd length to Int would trap on damaged input.
+            guard let (n, j) = varint(b, i), n <= UInt64(b.count - j) else { break }
             out.append(Data(b[j..<(j + Int(n))]))
             i = j + Int(n)
         }
@@ -372,7 +378,7 @@ enum ProtoReader {
                 let bits = (0..<8).reduce(UInt64(0)) { $0 | UInt64(b[i + $1]) << (8 * UInt64($1)) }
                 out.append(Field(number: n, double: Double(bitPattern: bits))); i += 8
             case 2:
-                guard let (len, j2) = varint(b, i), j2 + Int(len) <= b.count, len <= UInt64(b.count) else { return nil }
+                guard let (len, j2) = varint(b, i), len <= UInt64(b.count - j2) else { return nil }
                 out.append(Field(number: n, data: Data(b[j2..<(j2 + Int(len))]))); i = j2 + Int(len)
             case 5:
                 guard i + 4 <= b.count else { return nil }
