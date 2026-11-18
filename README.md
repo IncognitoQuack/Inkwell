@@ -13,8 +13,6 @@
 
 Built in Swift with AppKit and SwiftUI, with no third-party dependencies. Tuned on an XPPen Star G640, and works with any pressure-sensitive tablet (and a mouse or trackpad).
 
-> **Formerly "Inkwell".** Renamed in 0.2.0 because the old name was too common to find. Existing libraries keep working: if you already have an `Inkwell` folder in Application Support, Strokebook keeps using it, and your notebooks, folders, settings and `.inkwell` files are untouched.
-
 ## Features
 
 - **Smooth, low-latency ink:** every tablet sample, a 2D 1€ filter, motion prediction and pressure curves you can tune to your own hand (Pen Lab).
