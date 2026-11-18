@@ -198,7 +198,8 @@ final class PenLabModel: ObservableObject {
     static var folderOverride: URL?
 
     static var folder: URL {
-        folderOverride ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Inkwell/PenLab", isDirectory: true)
+        folderOverride ?? AppFolders.folder(in: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0])
+            .appendingPathComponent("PenLab", isDirectory: true)
     }
 
     /// Saves after every exercise, so nothing is lost if the window is closed early. Also writes latest.json.
@@ -478,7 +479,7 @@ struct PenLabView: View {
             Button { model.finish() } label: { Label("Results", systemImage: "chart.bar.doc.horizontal") }
                 .buttonStyle(.plain).padding(.horizontal, 8)
             Spacer()
-            Text("Recordings are saved in ~/Library/Application Support/Inkwell/PenLab.")
+            Text("Recordings are saved in \(PenLabModel.folder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")).")
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(16)

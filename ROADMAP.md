@@ -2,9 +2,9 @@
 
 "Seen in" lists well-known note-taking apps that offer a similar feature, from their public feature lists.
 
-Status: ✅ in Inkwell · 🔨 this release · 📋 planned.
+Status: ✅ in Strokebook · 🔨 this release · 📋 planned.
 
-| Feature | Seen in | Inkwell |
+| Feature | Seen in | Strokebook |
 |---|---|---|
 | Pressure ink, highlighter under ink, stroke eraser | all | ✅ |
 | Lasso select / move / recolour / duplicate | all | ✅ |

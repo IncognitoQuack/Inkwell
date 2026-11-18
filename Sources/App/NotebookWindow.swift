@@ -344,7 +344,7 @@ struct NotebookToolbar: View {
         if let err = session.saveError {
             Label("Not saved", systemImage: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange).font(.callout)
-                .help("Inkwell couldn’t save: \(err). Your work is safe in memory and saving will retry.")
+                .help("Strokebook couldn’t save: \(err). Your work is safe in memory and saving will retry.")
         }
     }
 

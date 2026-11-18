@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-11-18)
+
+- **Renamed from Inkwell to Strokebook.** Existing libraries, settings and `.inkwell` files keep working: an existing `Inkwell` support folder (also in iCloud Drive and Google Drive) is reused, the bundle identifier and file format are unchanged.
+- **Fixed two crashes in the GoodNotes importer**, found by fuzzing: record and field lengths of 2^63 or more were converted to `Int` before being range-checked, and non-finite or huge floats in a stroke blob overflowed an `Int` conversion. A damaged or hostile `.goodnotes` file now fails with an error instead of closing the app.
+- Added a fuzz harness (`Tools/fuzz`) covering notebook files, encryption, images, PDFs, GoodNotes exports and the maths parser, and regression tests (250 checks).
+- Added GitHub Actions CI, issue templates and contributing notes.
+
 ## 0.1.0 (2026-11-15)
 
 First public release.

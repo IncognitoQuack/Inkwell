@@ -239,7 +239,7 @@ extension CanvasView {
                 guard let self else { return }
                 guard let r = MathEval.solve(text.replacingOccurrences(of: "\n", with: "")) else {
                     let alert = NSAlert()
-                    alert.messageText = text.isEmpty ? "No handwriting was recognised." : "“\(text)” isn’t a sum Inkwell can solve."
+                    alert.messageText = text.isEmpty ? "No handwriting was recognised." : "“\(text)” isn’t a sum Strokebook can solve."
                     alert.informativeText = "Write arithmetic like 12 × (3 + 4), 2^10 or 15% × 80, then select it and choose Solve."
                     if let w = self.window { alert.beginSheetModal(for: w) }
                     return

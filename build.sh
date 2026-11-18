@@ -1,11 +1,11 @@
 #!/bin/zsh
-# Builds Inkwell.app into $BUILD_DIR (default ./build).
+# Builds Strokebook.app into $BUILD_DIR (default ./build).
 #   ARCHS="arm64"        faster dev build (default: arm64 x86_64 universal)
 set -euo pipefail
 cd "${0:A:h}"
 
 B=${BUILD_DIR:-build}
-APP=$B/Inkwell.app
+APP=$B/Strokebook.app
 ARCHS=(${=ARCHS:-arm64 x86_64})
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" $B/obj
@@ -15,10 +15,10 @@ bins=()
 for arch in $ARCHS; do
   swiftc -O -swift-version 5 -parse-as-library \
     -target "$arch-apple-macos14.0" -sdk "$SDK" \
-    Sources/Core/*.swift Sources/App/*.swift -o "$B/obj/Inkwell-$arch"
-  bins+=("$B/obj/Inkwell-$arch")
+    Sources/Core/*.swift Sources/App/*.swift -o "$B/obj/Strokebook-$arch"
+  bins+=("$B/obj/Strokebook-$arch")
 done
-lipo -create $bins -output "$APP/Contents/MacOS/Inkwell"
+lipo -create $bins -output "$APP/Contents/MacOS/Strokebook"
 
 # Icon
 ICONSET=$B/obj/AppIcon.iconset
@@ -35,12 +35,12 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Inkwell</string>
-  <key>CFBundleDisplayName</key><string>Inkwell</string>
+  <key>CFBundleName</key><string>Strokebook</string>
+  <key>CFBundleDisplayName</key><string>Strokebook</string>
   <key>CFBundleIdentifier</key><string>local.inkwell.app</string>
-  <key>CFBundleExecutable</key><string>Inkwell</string>
+  <key>CFBundleExecutable</key><string>Strokebook</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1.0</string>
+  <key>CFBundleShortVersionString</key><string>0.2.0</string>
   <key>CFBundleVersion</key><string>1</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
@@ -51,7 +51,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundleDocumentTypes</key>
   <array>
     <dict>
-      <key>CFBundleTypeName</key><string>Inkwell Notebook</string>
+      <key>CFBundleTypeName</key><string>Strokebook Notebook</string>
       <key>CFBundleTypeRole</key><string>Editor</string>
       <key>LSHandlerRank</key><string>Owner</string>
       <key>LSItemContentTypes</key><array><string>local.inkwell.notebook</string></array>
@@ -83,7 +83,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <array>
     <dict>
       <key>UTTypeIdentifier</key><string>local.inkwell.notebook</string>
-      <key>UTTypeDescription</key><string>Inkwell Notebook</string>
+      <key>UTTypeDescription</key><string>Strokebook Notebook</string>
       <key>UTTypeConformsTo</key><array><string>public.data</string></array>
       <key>UTTypeTagSpecification</key>
       <dict><key>public.filename-extension</key><array><string>inkwell</string></array></dict>
@@ -91,9 +91,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   </array>
   <key>NSHumanReadableCopyright</key><string>© 2026 Sanjit Mathur</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Inkwell records audio while you write, so you can play back what was said at any point in your notes.</string>
+  <string>Strokebook records audio while you write, so you can play back what was said at any point in your notes.</string>
   <key>NSSpeechRecognitionUsageDescription</key>
-  <string>Inkwell transcribes your recordings on this Mac so you can search what was said.</string>
+  <string>Strokebook transcribes your recordings on this Mac so you can search what was said.</string>
 </dict>
 </plist>
 PLIST

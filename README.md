@@ -1,8 +1,19 @@
-# Inkwell
+# Strokebook
 
-A fast, native macOS handwriting notebook for pen tablets. Write, annotate PDFs, and study, with ink that keeps up with your pen.
+[![tests](https://github.com/IncognitoQuack/Strokebook/actions/workflows/ci.yml/badge.svg)](https://github.com/IncognitoQuack/Strokebook/actions/workflows/ci.yml)
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-lightgrey)
+![Swift, no dependencies](https://img.shields.io/badge/Swift-no%20dependencies-orange)
+[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+**A fast, native macOS handwriting notebook for pen tablets.** Write, annotate PDFs and study, with ink that keeps up with your pen.
+
+<p align="center"><img src="docs/ink-demo.png" alt="Pressure-sensitive ink, a highlighter and a spiral, rendered by Strokebook's real ink pipeline" width="420"></p>
+
+<p align="center"><sub>Synthetic strokes rendered by the real ink pipeline: pressure-varying line weight, smooth curves, a clean highlighter.</sub></p>
 
 Built in Swift with AppKit and SwiftUI, with no third-party dependencies. Tuned on an XPPen Star G640, and works with any pressure-sensitive tablet (and a mouse or trackpad).
+
+> **Formerly "Inkwell".** Renamed in 0.2.0 because the old name was too common to find. Existing libraries keep working: if you already have an `Inkwell` folder in Application Support, Strokebook keeps using it, and your notebooks, folders, settings and `.inkwell` files are untouched.
 
 ## Features
 
@@ -22,11 +33,11 @@ macOS 14 or later, and the Xcode Command Line Tools (`xcode-select --install`). 
 
 ```bash
 zsh test.sh                    # core engine + storage tests (no Xcode needed)
-ARCHS=arm64 zsh build.sh       # fast dev build → build/Inkwell.app
+ARCHS=arm64 zsh build.sh       # fast dev build → build/Strokebook.app
 zsh build.sh                   # universal (Apple Silicon + Intel)
 ```
 
-Self-test: `Inkwell.app/Contents/MacOS/Inkwell --library /tmp/lib --screenshot /tmp/shots`.
+Self-test: `Strokebook.app/Contents/MacOS/Strokebook --library /tmp/lib --screenshot /tmp/shots`.
 It writes, erases, lassoes, undoes and reloads through the real event handlers, then prints `ui-checks: …` and a memory reading.
 Use a throwaway `--library` folder so it never touches your notebooks.
 
@@ -67,7 +78,7 @@ Settings (⌘,) has pressure feel (Soft/Natural/Firm), prediction, hold-to-strai
 
 ## Working with PDFs
 
-- **Bring PDFs in:** Library › Import PDF (⇧⌘O), drag PDFs onto the library, Finder › Open With › Inkwell, or drop one on the Dock icon. Inside a notebook, Insert › Image or PDF… (or drag a PDF onto the page) adds its pages after the current one.
+- **Bring PDFs in:** Library › Import PDF (⇧⌘O), drag PDFs onto the library, Finder › Open With › Strokebook, or drop one on the Dock icon. Inside a notebook, Insert › Image or PDF… (or drag a PDF onto the page) adds its pages after the current one.
 - **Every tool works on PDF pages:** pen, highlighter, eraser, lasso, text boxes, images, tape, ruler, zoom window, audio, links.
 - **Highlighter snaps to the PDF's text:** a rough swipe becomes a clean highlight exactly on the line, from word edge to word edge (Settings › Highlighter snaps to the text in PDFs). Over pictures or blank areas it stays freehand.
 - **Search:** the PDF's own text is searchable, along with your handwriting and typed notes. The PDF's table of contents becomes page bookmarks.
@@ -76,8 +87,8 @@ Settings (⌘,) has pressure feel (Soft/Natural/Firm), prediction, hold-to-strai
 
 ## Importing from GoodNotes
 
-In GoodNotes, export a notebook as **GoodNotes** format (`.goodnotes`). Then in Inkwell choose Library › **Import…** (⇧⌘O), drop the file on the library, or use Finder › Open With › Inkwell.
-- **What comes over:** pages in order, the cover and paper templates (exactly, as vector PDFs), and every pen stroke with its colour and its thick-thin pen shape. Everything is then fully editable with Inkwell's tools.
+In GoodNotes, export a notebook as **GoodNotes** format (`.goodnotes`). Then in Strokebook choose Library › **Import…** (⇧⌘O), drop the file on the library, or use Finder › Open With › Strokebook.
+- **What comes over:** pages in order, the cover and paper templates (exactly, as vector PDFs), and every pen stroke with its colour and its thick-thin pen shape. Everything is then fully editable with Strokebook's tools.
 - **What's reported:** item types not supported yet (typed text, pictures) are counted and listed after import, never dropped silently. Empty items, such as a scratch-out gesture's leftover, draw nothing in GoodNotes either and are skipped.
 - **How it works:** a zip of protobuf record streams. Strokes are Apple-LZ4 "tpl" blobs holding quadratic centre-line curves of (x, y, radius) points. See `Sources/Core/GoodNotes.swift`.
 
@@ -92,7 +103,7 @@ In GoodNotes, export a notebook as **GoodNotes** format (`.goodnotes`). Then in 
 
 ## Storage
 
-- **Location:** notebooks live in `~/Library/Application Support/Inkwell/Notebooks/<uuid>.inkwell`.
+- **Location:** notebooks live in `~/Library/Application Support/Strokebook/Notebooks/<uuid>.inkwell` (or in the existing `Inkwell` folder there, if you used the app under its old name). The `.inkwell` extension and file format are unchanged, so old files open and new files open in older builds that support their format version.
 - **File layout:** magic `INKW`, a format version, CRC32, an uncompressed metadata block for fast listing, and an LZFSE-compressed binary plist with points packed at 16 bytes each.
 - **Safe saves:** writes are atomic. The previous *valid* file is kept as `.bak`, and a damaged file opens from it automatically, with a notice.
 - **Newer versions:** files from a newer format version are refused, never silently downgraded.
@@ -104,15 +115,20 @@ In GoodNotes, export a notebook as **GoodNotes** format (`.goodnotes`). Then in 
 ```
 Sources/Core   Model, InkEngine, Storage, Renderer   (no AppKit; unit-tested)
 Sources/App    App, Session, Canvas, LiveInk, NotebookWindow, Library, State
-Tests/main.swift   ~230 checks: sanitising, filter, outline, hit-testing, precise erase, shapes, arrows, scribble,
+Tests/main.swift   ~250 checks: sanitising, filter, outline, hit-testing, precise erase, shapes, arrows, scribble,
                    links, text layout, PDF export/import, images, codec damage, store recovery,
                    encryption, folders, SM-2, maths parser, Pen Lab analysis, library moves
 Tools/demo     renders synthetic handwriting through the real pipeline to PNG + PDF
+Tools/fuzz     fuzz harness for every file parser
 ```
+
+## Reliability
+
+Everything that reads untrusted bytes (notebook files, encrypted payloads, images, PDFs, GoodNotes exports, the maths parser) is fuzzed: `zsh Tools/fuzz/fuzz.sh <target> [iterations] [seed]` mutates valid inputs thousands of times and requires that each one loads or throws a clean error. Targets include "deep" damage that keeps the checksum valid so corruption reaches the decoders. A run of about 70,000 inputs found two crashes in the GoodNotes importer (an oversized length converted to `Int` before it was range-checked, and non-finite or huge floats in a stroke); both are fixed and covered by regression tests, and the same runs now finish clean.
 
 ## Contributing
 
-Bug reports and pull requests are welcome. Please run `zsh test.sh` before sending a change, and add a check to `Tests/main.swift` for any bug you fix. See [ROADMAP.md](ROADMAP.md) for planned features.
+Bug reports and pull requests are welcome. Please run `zsh test.sh` before sending a change, add a check to `Tests/main.swift` for any bug you fix, and run the fuzz targets if you touch a parser. See [CONTRIBUTING.md](CONTRIBUTING.md). See [ROADMAP.md](ROADMAP.md) for planned features.
 
 ## License
 

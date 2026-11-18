@@ -725,7 +725,7 @@ struct SettingsView: View {
                     Text("Google Drive").tag("googleDrive")
                     Text("Another folder… (Dropbox, OneDrive…)").tag("custom")
                 }
-                Text("Cloud locations keep each notebook as a file (for Google Drive: My Drive › Inkwell, via Google Drive for desktop). Edit a notebook on one computer at a time; the library refreshes when you switch back to Inkwell.")
+                Text("Cloud locations keep each notebook as a file (for Google Drive: My Drive › Strokebook, via Google Drive for desktop). Edit a notebook on one computer at a time; the library refreshes when you switch back to Strokebook.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("XPPen Star G640 setup") {

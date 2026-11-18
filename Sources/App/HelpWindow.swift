@@ -75,7 +75,7 @@ final class HelpWindowController: NSWindowController {
     init() {
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 660), styleMask: [.titled, .closable, .resizable, .miniaturizable],
                          backing: .buffered, defer: false)
-        w.title = "Inkwell Help"
+        w.title = "Strokebook Help"
         w.isReleasedWhenClosed = false
         w.contentView = NSHostingView(rootView: HelpView())
         w.center()

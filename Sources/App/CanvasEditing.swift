@@ -279,7 +279,7 @@ extension CanvasView {
 
     private static let pasteboardType = NSPasteboard.PasteboardType("local.inkwell.items")
 
-    /// What Inkwell copies: strokes and elements plus any assets the elements need, so pasting into a
+    /// What Strokebook copies: strokes and elements plus any assets the elements need, so pasting into a
     /// different notebook keeps the images.
     struct ClipboardItems: Codable {
         var strokes: [Stroke]

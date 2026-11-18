@@ -711,7 +711,7 @@ test("tape elements, audio anchors and transcripts round-trip and are searchable
 
 test("library move (iCloud Drive switch): newer copy wins, nothing lost") {
     let src = tmp.appendingPathComponent("move-src-\(UUID().uuidString)")
-    let dst = tmp.appendingPathComponent("move-dst-\(UUID().uuidString)/Inkwell")
+    let dst = tmp.appendingPathComponent("move-dst-\(UUID().uuidString)/Strokebook")
     let a = try LibraryStore(folder: src)
     var only = Notebook(title: "Only here")
     var both = Notebook(title: "Old copy")
@@ -778,7 +778,7 @@ func tplStroke(start: (Float, Float, Float), quads: [(Float, Float, Float, Float
     u32(UInt32(quads.count + 1)); u16(0); for _ in quads { u16(1) }
     u32(3); f(start.0); f(start.1); f(start.2)
     u32(UInt32(quads.count * 6)); for q in quads { [q.0, q.1, q.2, q.3, q.4, q.5].forEach(f) }
-    for _ in 0..<7 { u32(0) } // outline arrays GoodNotes precomputes; Inkwell rebuilds its own
+    for _ in 0..<7 { u32(0) } // outline arrays GoodNotes precomputes; Strokebook rebuilds its own
     let total = UInt32(8 + sig.count + body.count)
     withUnsafeBytes(of: total.littleEndian) { d.append(contentsOf: $0) }
     return d + sig + body
@@ -838,6 +838,46 @@ test("GoodNotes: UUID+1 carry, tpl parsing, protobuf safety") {
     check(Tpl.parse(structs).map(Tpl.isEmpty) == true, "struct arrays parse; empty item detected")
     check(ProtoReader.fields(Data([0x0A, 0xFF, 0x01])) == nil, "overlong length rejected")
     check(ProtoReader.records(Data([0x05, 0x01])).isEmpty, "truncated record stream yields nothing")
+}
+
+test("renaming the app never hides an existing library") {
+    let parent = tmp.appendingPathComponent("support-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+    check(AppFolders.folderName(in: parent) == "Strokebook", "fresh install uses the new name")
+    check(AppFolders.folder(in: parent).lastPathComponent == "Strokebook", "folder(in:) agrees")
+    try FileManager.default.createDirectory(at: parent.appendingPathComponent("Inkwell/Notebooks"), withIntermediateDirectories: true)
+    check(AppFolders.folderName(in: parent) == "Inkwell", "an existing Inkwell folder keeps being used")
+    try FileManager.default.createDirectory(at: parent.appendingPathComponent("Strokebook"), withIntermediateDirectories: true)
+    check(AppFolders.folderName(in: parent) == "Inkwell", "the old folder still wins, so notebooks are never split across two places")
+}
+
+test("GoodNotes: hostile or damaged input cannot crash the importer") {
+    // Found by fuzzing: a 64-bit length of 2^63 or more was converted to Int before being range-checked.
+    check(ProtoReader.records(pbVarint(UInt64.max) + Data([1, 2, 3])).isEmpty, "huge record length ends the stream")
+    check(ProtoReader.records(pbVarint(1 << 63) + Data([1])).isEmpty, "2^63 record length ends the stream")
+    check(ProtoReader.fields(Data([0x0A]) + pbVarint(UInt64.max)) == nil, "huge field length rejected")
+    check(ProtoReader.fields(Data([0x0A]) + pbVarint(1 << 63) + Data([0])) == nil, "2^63 field length rejected")
+    check(ProtoReader.fields(Data([0x0A]) + pbVarint(UInt64.max - 2)) == nil, "near-max field length rejected")
+    check(ProtoReader.varint([UInt8](repeating: 0xFF, count: 20), 0) == nil, "overlong varint rejected")
+    check(ProtoReader.fields(Data([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01])) == nil, "enormous field number rejected")
+
+    // Non-finite and absurd floats in a stroke blob (also found by reasoning about the same code path).
+    func decode(_ s: (Float, Float, Float), _ q: [(Float, Float, Float, Float, Float, Float)]) -> GoodNotesImporter.Decoded {
+        guard let parts = Tpl.parse(tplStroke(start: s, quads: q)) else { return .unsupported }
+        return GoodNotesImporter.stroke(from: parts, fields: [])
+    }
+    func isStroke(_ d: GoodNotesImporter.Decoded) -> Stroke? { if case .stroke(let s) = d { return s }; return nil }
+    check(isStroke(decode((.nan, 0, 1), [(1, 1, 1, 2, 2, 1)])) == nil, "NaN start point rejected")
+    check(isStroke(decode((0, 0, 1), [(.infinity, 1, 1, 2, 2, 1)])) == nil, "infinite control point rejected")
+    check(isStroke(decode((0, 0, 1), [(1, .nan, 1, 2, 2, 1)])) == nil, "NaN control point rejected")
+    if let huge = isStroke(decode((0, 0, 1), [(1e38, 1e38, 1, -1e38, 1e38, 1)])) {
+        check(huge.points.allSatisfy { $0.x.isFinite && $0.y.isFinite }, "huge finite coordinates stay finite")
+    }
+    check(isStroke(decode((0, 0, 1), [(10, 10, 1, 20, 0, 1)])) != nil, "an ordinary stroke still decodes")
+    // A zip-looking blob with garbage must throw, not trap.
+    for n in [0, 3, 21, 22, 100] {
+        check((try? GoodNotesImporter.importNotebook(Data([0x50, 0x4B, 3, 4]) + Data(repeating: 0xAB, count: n), fallbackTitle: "x")) == nil, "garbage zip (\(n) bytes) throws")
+    }
 }
 
 test("GoodNotes: full import of a synthetic export") {

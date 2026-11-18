@@ -1,6 +1,6 @@
 import Foundation
 
-/// Inkwell notebook file (`.inkwell`), version 2 (version 3 = password-protected). All integers little-endian.
+/// Strokebook notebook file (`.inkwell`), version 2 (version 3 = password-protected). All integers little-endian.
 /// v2 added page elements (text, images, links), PDF backgrounds, assets and search text; v1 files
 /// read as v2 with those empty. v1 readers refuse v2 files, so they can never save and drop the new data.
 ///
@@ -35,8 +35,8 @@ enum NotebookCodec {
         var errorDescription: String? {
             switch self {
             case .locked: return "This notebook is locked with a password."
-            case .notANotebook: return "This file isn’t an Inkwell notebook."
-            case .newerVersion(let v): return "This notebook was saved by a newer version of Inkwell (format \(v)). Update Inkwell to open it."
+            case .notANotebook: return "This file isn’t an Strokebook notebook."
+            case .newerVersion(let v): return "This notebook was saved by a newer version of Strokebook (format \(v)). Update Strokebook to open it."
             case .truncated: return "The notebook file is incomplete."
             case .checksumMismatch: return "The notebook file is damaged (checksum mismatch)."
             case .undecodable(let why): return "The notebook couldn’t be read: \(why)"
@@ -134,6 +134,22 @@ enum NotebookCodec {
     }
 }
 
+/// Names the app's folder inside a parent such as Application Support, iCloud Drive or Google Drive.
+/// Strokebook was first released as "Inkwell". Anyone who already has an "Inkwell" folder keeps using it, so
+/// renaming the app never moves, copies or hides existing notebooks; fresh installs get "Strokebook".
+enum AppFolders {
+    static let legacyName = "Inkwell"
+    static let name = "Strokebook"
+
+    static func folderName(in parent: URL) -> String {
+        FileManager.default.fileExists(atPath: parent.appendingPathComponent(legacyName).path) ? legacyName : name
+    }
+
+    static func folder(in parent: URL) -> URL {
+        parent.appendingPathComponent(folderName(in: parent), isDirectory: true)
+    }
+}
+
 /// Reads and writes notebooks in a library folder. Thread-safe: all file work runs on one serial queue.
 final class LibraryStore {
     static let fileExtension = "inkwell"
@@ -149,24 +165,24 @@ final class LibraryStore {
 
     static func defaultFolder() -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("Inkwell/Notebooks", isDirectory: true)
+        return AppFolders.folder(in: base).appendingPathComponent("Notebooks", isDirectory: true)
     }
 
-    /// iCloud Drive's Inkwell folder, or nil when iCloud Drive is off on this Mac.
+    /// iCloud Drive's Strokebook folder, or nil when iCloud Drive is off on this Mac.
     static func iCloudFolder() -> URL? {
         let docs = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
         guard FileManager.default.fileExists(atPath: docs.path) else { return nil }
-        return docs.appendingPathComponent("Inkwell", isDirectory: true)
+        return AppFolders.folder(in: docs)
     }
 
-    /// Google Drive for desktop's "My Drive"/Inkwell, or nil when Google Drive isn't installed and signed in.
+    /// Google Drive for desktop's "My Drive"/Strokebook, or nil when Google Drive isn't installed and signed in.
     static func googleDriveFolder() -> URL? {
         let cloud = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/CloudStorage", isDirectory: true)
         let mounts = (try? FileManager.default.contentsOfDirectory(at: cloud, includingPropertiesForKeys: nil)) ?? []
         guard let drive = mounts.filter({ $0.lastPathComponent.hasPrefix("GoogleDrive-") }).sorted(by: { $0.path < $1.path }).first else { return nil }
         let myDrive = drive.appendingPathComponent("My Drive", isDirectory: true)
         let base = FileManager.default.fileExists(atPath: myDrive.path) ? myDrive : drive
-        return base.appendingPathComponent("Inkwell", isDirectory: true)
+        return AppFolders.folder(in: base)
     }
 
     struct MoveReport { var moved = 0; var keptNewer = 0; var failed: [String] = [] }

@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             store = try LibraryStore(folder: folder)
         } catch {
             let alert = NSAlert(error: error)
-            alert.messageText = "Inkwell can’t open its library folder."
+            alert.messageText = "Strokebook can’t open its library folder."
             alert.runModal()
             NSApp.terminate(nil)
             return
@@ -50,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         buildMenus()
         libraryWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 920, height: 640),
                                  styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        libraryWindow.title = "Inkwell"
+        libraryWindow.title = "Strokebook"
         libraryWindow.isReleasedWhenClosed = false
         libraryWindow.contentView = NSHostingView(rootView: LibraryView(model: library))
         libraryWindow.setFrameAutosaveName("Library")
@@ -151,7 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     }
 
     /// Moves the library to another location (this Mac, iCloud Drive, Google Drive or any folder),
-    /// then reopens Inkwell there.
+    /// then reopens Strokebook there.
     func changeLibraryLocation(to loc: LibraryLocation) {
         if loc == .custom {
             let panel = NSOpenPanel()
@@ -161,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             panel.prompt = "Use This Folder"
             panel.message = "Choose a folder for your notebooks (for example inside Dropbox or OneDrive)."
             guard panel.runModal() == .OK, let url = panel.url else { return }
-            UserDefaults.standard.set(url.appendingPathComponent("Inkwell", isDirectory: true).path, forKey: "libraryCustomPath")
+            UserDefaults.standard.set(AppFolders.folder(in: url).path, forKey: "libraryCustomPath")
         } else if loc == Self.libraryLocation {
             return
         }
@@ -173,7 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 a.informativeText = "Turn on iCloud Drive in System Settings › Apple Account › iCloud, then try again."
             case .googleDrive:
                 a.messageText = "Google Drive isn’t set up on this Mac."
-                a.informativeText = "Install “Google Drive for desktop” from google.com/drive/download and sign in. Your Drive then appears in Finder, and Inkwell can keep your notebooks in My Drive › Inkwell."
+                a.informativeText = "Install “Google Drive for desktop” from google.com/drive/download and sign in. Your Drive then appears in Finder, and Strokebook can keep your notebooks in My Drive › Strokebook."
                 a.addButton(withTitle: "Get Google Drive")
                 a.addButton(withTitle: "Cancel")
                 if a.runModal() == .alertFirstButtonReturn, let u = URL(string: "https://www.google.com/drive/download/") { NSWorkspace.shared.open(u) }
@@ -190,7 +190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         alert.messageText = "Move your notebooks to \(Self.name(loc))?"
         alert.informativeText = (loc == .local ? "They’ll be moved into this Mac’s library."
             : "They’ll be kept in \(dest.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")) and sync to your other computers through \(Self.name(loc)). Edit a notebook on one computer at a time.")
-            + " Inkwell will reopen."
+            + " Strokebook will reopen."
         alert.addButton(withTitle: "Move and Reopen")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -257,7 +257,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             if loaded.recoveredFromBackup {
                 let alert = NSAlert()
                 alert.messageText = "This notebook was restored from its backup."
-                alert.informativeText = "The latest save was damaged, so Inkwell opened the previous good version. It will be saved normally from now on."
+                alert.informativeText = "The latest save was damaged, so Strokebook opened the previous good version. It will be saved normally from now on."
                 alert.beginSheetModal(for: controller.window!)
                 session.saveNow()
             }
@@ -280,7 +280,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func showSettings() {
         if settingsWindow == nil {
             let w = NSWindow(contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "Inkwell Settings"
+            w.title = "Strokebook Settings"
             w.isReleasedWhenClosed = false
             w.contentView = NSHostingView(rootView: SettingsView(tools: tools, openPenLab: { [weak self] in self?.showPenLab() },
                                                                  location: Self.libraryLocation.rawValue,
@@ -410,16 +410,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         }
         let me = self as AnyObject
 
-        menu("Inkwell", [
-            item("About Inkwell", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+        menu("Strokebook", [
+            item("About Strokebook", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
             .separator(),
             item("Settings…", #selector(showSettings), ",", target: me),
             item("Pen Lab…", #selector(showPenLab), "p", [.command, .option], target: me),
             .separator(),
-            item("Hide Inkwell", #selector(NSApplication.hide(_:)), "h"),
+            item("Hide Strokebook", #selector(NSApplication.hide(_:)), "h"),
             item("Hide Others", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
             .separator(),
-            item("Quit Inkwell", #selector(NSApplication.terminate(_:)), "q"),
+            item("Quit Strokebook", #selector(NSApplication.terminate(_:)), "q"),
         ])
         menu("File", [
             item("New Notebook…", #selector(newNotebook), "n", target: me),
@@ -550,7 +550,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                         snap(self.libraryWindow, "3-library-after.png")
                         if ProcessInfo.processInfo.environment["INKWELL_PERF"] != nil { SyntheticPen.perfPDF(appDelegate: self) }
                         if let sample = ProcessInfo.processInfo.environment["GOODNOTES_SAMPLE"] {
-                            // Real GoodNotes export → Inkwell notebook window, checked and snapshotted.
+                            // Real GoodNotes export → Strokebook notebook window, checked and snapshotted.
                             var gfails: [String] = []
                             do {
                                 let r = try GoodNotesImporter.importNotebook(Data(contentsOf: URL(fileURLWithPath: sample)), fallbackTitle: "GoodNotes sample")

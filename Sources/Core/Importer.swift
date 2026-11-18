@@ -13,7 +13,7 @@ enum Importer {
 
         var errorDescription: String? {
             switch self {
-            case .unreadableImage: return "That file isn’t an image Inkwell can read."
+            case .unreadableImage: return "That file isn’t an image Strokebook can read."
             case .unreadablePDF: return "That file isn’t a readable PDF."
             case .lockedPDF: return "That PDF is password-protected. Unlock it (e.g. in Preview) and import it again."
             case .emptyPDF: return "That PDF has no pages."

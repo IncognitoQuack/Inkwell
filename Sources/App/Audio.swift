@@ -55,8 +55,8 @@ final class AudioController: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private func explainMicrophone() {
         let alert = NSAlert()
-        alert.messageText = "Inkwell can’t use the microphone."
-        alert.informativeText = "Turn on Inkwell in System Settings › Privacy & Security › Microphone, then try again."
+        alert.messageText = "Strokebook can’t use the microphone."
+        alert.informativeText = "Turn on Strokebook in System Settings › Privacy & Security › Microphone, then try again."
         alert.addButton(withTitle: "Open Settings")
         alert.addButton(withTitle: "Cancel")
         if alert.runModal() == .alertFirstButtonReturn,

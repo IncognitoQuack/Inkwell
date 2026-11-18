@@ -1,0 +1,17 @@
+name: tests
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core tests
+        run: zsh test.sh
+      - name: Build the app
+        run: ARCHS=arm64 zsh build.sh
+      - name: Fuzz smoke test
+        run: |
+          zsh Tools/fuzz/fuzz.sh goodnotes-deep 500
+          zsh Tools/fuzz/fuzz.sh codec-deep 500

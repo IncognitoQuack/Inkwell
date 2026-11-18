@@ -448,7 +448,7 @@ enum PageRenderer {
         let chosen = (pages ?? Array(notebook.pages.indices)).filter { notebook.pages.indices.contains($0) }
         guard !chosen.isEmpty else { throw CocoaError(.fileWriteUnknown) }
         var box = notebook.pages[chosen[0]].rect
-        let info: [CFString: Any] = [kCGPDFContextTitle: notebook.title, kCGPDFContextCreator: "Inkwell"]
+        let info: [CFString: Any] = [kCGPDFContextTitle: notebook.title, kCGPDFContextCreator: "Strokebook"]
         guard let ctx = CGContext(url as CFURL, mediaBox: &box, info as CFDictionary) else {
             throw CocoaError(.fileWriteNoPermission)
         }
